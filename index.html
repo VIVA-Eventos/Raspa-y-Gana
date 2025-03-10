@@ -8,38 +8,143 @@
         body {
             text-align: center;
             font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #b8860b; /* Color dorado para el título */
         }
         canvas {
             margin-top: 20px;
             cursor: pointer;
             border: 2px solid black;
             touch-action: none; /* Evita el desplazamiento en móviles */
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
         #prize-message {
             font-size: 24px;
             font-weight: bold;
             margin-top: 20px;
+            min-height: 30px; /* Reservar espacio para evitar saltos de contenido */
+        }
+        #reset-button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #b8860b;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            display: none;
         }
     </style>
 </head>
 <body>
-
     <h1>🎉 WOMEN'S GOLD FEST 🎉</h1>
     <p>¡Raspa la tarjeta para ver si ganaste!</p>
     
     <canvas id="scratchCanvas" width="300" height="150"></canvas>
     <p id="prize-message"></p>
-
+    <button id="reset-button">Jugar otra vez</button>
+    
     <script>
         const canvas = document.getElementById("scratchCanvas");
         const ctx = canvas.getContext("2d");
-
-        // Dibujar la capa gris
-        ctx.fillStyle = "gray";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
+        const prizeMessage = document.getElementById("prize-message");
+        const resetButton = document.getElementById("reset-button");
+        
         let isDrawing = false;
-
+        let currentPrize = "";
+        
+        // Inicializar el juego
+        function initGame() {
+            // Determinar el premio
+            currentPrize = Math.random() < 0.6 ? "🎉¡Ganaste una boleta!" : "😔 Sigue participando";
+            
+            // Limpiar canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Dibujar el fondo
+            ctx.fillStyle = "#fff9e6"; // Fondo color crema claro
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Dibujar el texto del premio primero
+            ctx.fillStyle = currentPrize.includes("Ganaste") ? "#b8860b" : "#666666";
+            ctx.font = "bold 22px Arial";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(currentPrize.replace("🎉", "").replace("😔", ""), canvas.width / 2, canvas.height / 2);
+            
+            // Añadir estrellas si es premio ganador
+            if (currentPrize.includes("Ganaste")) {
+                drawPrizeDecoration();
+            }
+            
+            // Dibujar la capa gris encima
+            ctx.globalCompositeOperation = "source-over"; // Volver al modo normal
+            ctx.fillStyle = "gray";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Añadir textura a la capa gris
+            addScratchTexture();
+            
+            // Añadir texto de instrucción
+            ctx.fillStyle = "white";
+            ctx.font = "18px Arial";
+            ctx.fillText("Raspa aquí", canvas.width / 2, canvas.height / 2);
+            
+            // Resetear mensaje y botón
+            prizeMessage.innerText = "";
+            resetButton.style.display = "none";
+            
+            // Habilitar raspado
+            canvas.style.pointerEvents = "auto";
+        }
+        
+        // Añadir textura para que parezca raspable
+        function addScratchTexture() {
+            for (let i = 0; i < 3000; i++) {
+                const x = Math.random() * canvas.width;
+                const y = Math.random() * canvas.height;
+                const radius = Math.random() * 1.5;
+                
+                ctx.fillStyle = `rgba(0, 0, 0, 0.1)`;
+                ctx.beginPath();
+                ctx.arc(x, y, radius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        // Dibujar decoración para premio ganador
+        function drawPrizeDecoration() {
+            ctx.fillStyle = "#b8860b"; // Color dorado
+            
+            // Dibujar estrellas o símbolos alrededor del texto
+            for (let i = 0; i < 8; i++) {
+                const angle = (Math.PI * 2 / 8) * i;
+                const distance = 50;
+                const x = Math.cos(angle) * distance + canvas.width / 2;
+                const y = Math.sin(angle) * distance + canvas.height / 2;
+                
+                // Dibujar estrellas
+                ctx.beginPath();
+                for (let j = 0; j < 5; j++) {
+                    const starAngle = (Math.PI * 2 / 5) * j - Math.PI / 2;
+                    const radius = j === 0 ? 8 : 4;
+                    const starX = x + Math.cos(starAngle) * radius;
+                    const starY = y + Math.sin(starAngle) * radius;
+                    
+                    if (j === 0) {
+                        ctx.moveTo(starX, starY);
+                    } else {
+                        ctx.lineTo(starX, starY);
+                    }
+                }
+                ctx.closePath();
+                ctx.fill();
+            }
+        }
+        
         function getPosition(event) {
             const rect = canvas.getBoundingClientRect();
             let x, y;
@@ -53,16 +158,16 @@
             }
             return { x, y };
         }
-
+        
         function startDrawing(event) {
             isDrawing = true;
             erase(getPosition(event));
         }
-
+        
         function stopDrawing() {
             isDrawing = false;
         }
-
+        
         function erase(position) {
             ctx.globalCompositeOperation = "destination-out";
             ctx.beginPath();
@@ -70,47 +175,52 @@
             ctx.fill();
             checkIfRevealed();
         }
-
+        
         function draw(event) {
             if (!isDrawing) return;
             erase(getPosition(event));
             event.preventDefault(); // Evita el desplazamiento en móviles
         }
-
+        
         function checkIfRevealed() {
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height, { willReadFrequently: true });
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
             let revealedPixels = 0;
             const totalPixels = imageData.data.length / 4;
-
+            
             for (let i = 0; i < imageData.data.length; i += 4) {
                 if (imageData.data[i + 3] === 0) { // Verifica transparencia
                     revealedPixels++;
                 }
             }
-
+            
             if (revealedPixels / totalPixels > 0.4) { // Si más del 40% ha sido raspado
                 revealPrize();
             }
         }
-
+        
         function revealPrize() {
-            const prizeText = Math.random() < 0.6 ? "🎉¡Ganaste una boleta!" : "😔 Sigue participando";
-            document.getElementById("prize-message").innerText = prizeText;
-            canvas.style.pointerEvents = "none"; // Deshabilita más raspado después del premio
+            prizeMessage.innerText = currentPrize;
+            prizeMessage.style.color = currentPrize.includes("Ganaste") ? "#b8860b" : "#666666";
+            canvas.style.pointerEvents = "none"; // Deshabilita más raspado
+            resetButton.style.display = "inline-block";
         }
-
+        
+        // Inicializar el juego al cargar
+        initGame();
+        
+        // Evento para reiniciar el juego
+        resetButton.addEventListener("click", initGame);
+        
         // Eventos para PC (mouse)
         canvas.addEventListener("mousedown", startDrawing);
         canvas.addEventListener("mouseup", stopDrawing);
         canvas.addEventListener("mousemove", draw);
         canvas.addEventListener("mouseleave", stopDrawing);
-
+        
         // Eventos para móviles (pantalla táctil)
         canvas.addEventListener("touchstart", startDrawing);
         canvas.addEventListener("touchend", stopDrawing);
         canvas.addEventListener("touchmove", draw);
-
     </script>
-
 </body>
 </html>
