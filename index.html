@@ -54,7 +54,7 @@
         }
         
         function checkIfRevealed() {
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height, { willReadFrequently: true });
             let pixels = imageData.data;
             let clearedPixels = 0;
             
