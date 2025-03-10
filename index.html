@@ -94,7 +94,7 @@
         }
 
         function revealPrize() {
-            const prizeText = Math.random() < 0.7 ? "🎉 ¡Felicidades, ganaste una boleta!" : "😔 Sigue participando";
+            const prizeText = Math.random() < 0.6 ? "🎉¡Ganaste una boleta!" : "😔 Sigue participando";
             document.getElementById("prize-message").innerText = prizeText;
             canvas.style.pointerEvents = "none"; // Deshabilita más raspado después del premio
         }
