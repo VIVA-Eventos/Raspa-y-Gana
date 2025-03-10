@@ -66,13 +66,13 @@
                 }
             }
 
-            if (revealedPixels / totalPixels > 0.5) { // Si más del 50% ha sido raspado
+            if (revealedPixels / totalPixels > 0.4) { // Si más del 50% ha sido raspado
                 revealPrize();
             }
         }
 
         function revealPrize() {
-            const prizeText = Math.random() < 0.3 ? "🎉 ¡Felicidades, ganaste una boleta!" : "😔 Sigue participando";
+            const prizeText = Math.random() < 0.7 ? "🎉 ¡Felicidades, ganaste una boleta!" : "😔 Sigue participando";
             document.getElementById("prize-message").innerText = prizeText;
             canvas.style.pointerEvents = "none"; // Deshabilita más raspado después del premio
         }
