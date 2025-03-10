@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Raspa y Gana</title>
     <style>
         body {
@@ -13,6 +13,7 @@
             margin-top: 20px;
             cursor: pointer;
             border: 2px solid black;
+            touch-action: none; /* Evita el desplazamiento en móviles */
         }
         #prize-message {
             font-size: 24px;
@@ -39,21 +40,42 @@
 
         let isDrawing = false;
 
-        canvas.addEventListener("mousedown", () => isDrawing = true);
-        canvas.addEventListener("mouseup", () => isDrawing = false);
-        canvas.addEventListener("mouseleave", () => isDrawing = false);
-
-        canvas.addEventListener("mousemove", (e) => {
-            if (!isDrawing) return;
+        function getPosition(event) {
             const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
+            let x, y;
+            
+            if (event.touches) { // Si es táctil
+                x = event.touches[0].clientX - rect.left;
+                y = event.touches[0].clientY - rect.top;
+            } else { // Si es con el mouse
+                x = event.clientX - rect.left;
+                y = event.clientY - rect.top;
+            }
+            return { x, y };
+        }
+
+        function startDrawing(event) {
+            isDrawing = true;
+            erase(getPosition(event));
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+        }
+
+        function erase(position) {
             ctx.globalCompositeOperation = "destination-out";
             ctx.beginPath();
-            ctx.arc(x, y, 15, 0, Math.PI * 2);
+            ctx.arc(position.x, position.y, 15, 0, Math.PI * 2);
             ctx.fill();
             checkIfRevealed();
-        });
+        }
+
+        function draw(event) {
+            if (!isDrawing) return;
+            erase(getPosition(event));
+            event.preventDefault(); // Evita el desplazamiento en móviles
+        }
 
         function checkIfRevealed() {
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height, { willReadFrequently: true });
@@ -66,7 +88,7 @@
                 }
             }
 
-            if (revealedPixels / totalPixels > 0.4) { // Si más del 50% ha sido raspado
+            if (revealedPixels / totalPixels > 0.4) { // Si más del 40% ha sido raspado
                 revealPrize();
             }
         }
@@ -76,6 +98,18 @@
             document.getElementById("prize-message").innerText = prizeText;
             canvas.style.pointerEvents = "none"; // Deshabilita más raspado después del premio
         }
+
+        // Eventos para PC (mouse)
+        canvas.addEventListener("mousedown", startDrawing);
+        canvas.addEventListener("mouseup", stopDrawing);
+        canvas.addEventListener("mousemove", draw);
+        canvas.addEventListener("mouseleave", stopDrawing);
+
+        // Eventos para móviles (pantalla táctil)
+        canvas.addEventListener("touchstart", startDrawing);
+        canvas.addEventListener("touchend", stopDrawing);
+        canvas.addEventListener("touchmove", draw);
+
     </script>
 
 </body>
