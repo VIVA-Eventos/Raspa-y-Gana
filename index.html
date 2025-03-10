@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Raspa y Gana</title>
+    <style>
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+        }
+        canvas {
+            border: 2px solid #000;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Raspa y Gana 🎟️</h1>
+    <p>Raspa la tarjeta y descubre si ganaste una boleta para el evento.</p>
+    <canvas id="scratchCard" width="300" height="150"></canvas>
+    <p id="message" style="font-size: 20px; font-weight: bold;"></p>
+    
+    <script>
+        const canvas = document.getElementById("scratchCard");
+        const ctx = canvas.getContext("2d");
+        let isDrawing = false;
+        let revealed = false;
+        
+        // Mensaje oculto aleatorio
+        const isWinner = Math.random() < 0.3; // 30% de probabilidades de ganar
+        const message = isWinner ? "🎉 ¡Felicidades, ganaste una boleta!" : "😔 Sigue participando";
+        
+        // Dibujar la capa gris
+        ctx.fillStyle = "gray";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "black";
+        ctx.font = "20px Arial";
+        ctx.fillText("Raspa aquí", 100, 80);
+        
+        canvas.addEventListener("mousedown", () => isDrawing = true);
+        canvas.addEventListener("mouseup", () => isDrawing = false);
+        canvas.addEventListener("mousemove", scratch);
+        
+        function scratch(event) {
+            if (!isDrawing || revealed) return;
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            ctx.clearRect(x - 10, y - 10, 20, 20);
+            
+            checkIfRevealed();
+        }
+        
+        function checkIfRevealed() {
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            let pixels = imageData.data;
+            let clearedPixels = 0;
+            
+            for (let i = 3; i < pixels.length; i += 4) {
+                if (pixels[i] === 0) clearedPixels++;
+            }
+            
+            if (clearedPixels > pixels.length / 2) {
+                revealed = true;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                document.getElementById("message").innerText = message;
+            }
+        }
+    </script>
+</body>
+</html>
